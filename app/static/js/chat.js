@@ -3,20 +3,74 @@ document.addEventListener("DOMContentLoaded", () => {
   const sendButton = document.getElementById("send-button");
   const messagesContainer = document.getElementById("messages");
 
-  // Connect to SocketIO server
-  const socket = io();
+  // Function to send message
+  async function sendMessage() {
+    const message = messageInput.value.trim();
 
-  // Handle connection status
-  socket.on("status", (data) => {
-    console.log(data.message);
-  });
+    if (message !== "") {
+      // Display user message
+      displayMessage(message, "user");
 
-  // Handle incoming messages from server
-  socket.on("message", (data) => {
-    removeTypingIndicator();
-    displayMessage(data.text, data.sender);
-    scrollToBottom();
-  });
+      // Clear input
+      messageInput.value = "";
+
+      // Show typing indicator
+      displayTypingIndicator();
+
+      try {
+        // Send message to server using fetch API
+        const response = await fetch("/send_message", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ message }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        // Remove typing indicator
+        removeTypingIndicator();
+
+        // Display AI response
+        if (data.response) {
+          displayMessage(data.response, "ai");
+        }
+      } catch (error) {
+        console.error("Error sending message:", error);
+        removeTypingIndicator();
+        displayMessage(
+          "Sorry, I'm having trouble connecting right now. Please try again later.",
+          "ai"
+        );
+      }
+
+      // Scroll to bottom
+      scrollToBottom();
+    }
+  }
+
+  // Load initial welcome message
+  async function loadInitialMessage() {
+    try {
+      const response = await fetch("/get_initial_message");
+      const data = await response.json();
+
+      if (data.response) {
+        displayMessage(data.response, "ai");
+        scrollToBottom();
+      }
+    } catch (error) {
+      console.error("Error loading initial message:", error);
+    }
+  }
+
+  // Call initial message when page loads
+  loadInitialMessage();
 
   // Send message when button is clicked
   sendButton.addEventListener("click", sendMessage);
@@ -27,28 +81,6 @@ document.addEventListener("DOMContentLoaded", () => {
       sendMessage();
     }
   });
-
-  // Function to send message
-  function sendMessage() {
-    const message = messageInput.value.trim();
-
-    if (message !== "") {
-      // Display user message
-      displayMessage(message, "user");
-
-      // Send to server
-      socket.emit("send_message", { message });
-
-      // Clear input
-      messageInput.value = "";
-
-      // Show typing indicator
-      displayTypingIndicator();
-
-      // Scroll to bottom
-      scrollToBottom();
-    }
-  }
 
   // Function to display message
   function displayMessage(text, sender) {
