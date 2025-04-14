@@ -41,5 +41,5 @@ def send_message():
 
 @app.route('/get_initial_message', methods=['GET'])
 def get_initial_message():
-    welcome_message = "नमस्ते दोस्त! मैं आपका AI therapist हूं। आप कैसे feel कर रहे हैं आज? कुछ भी share करना चाहते हैं तो बेझिझक बताएं, मैं यहां आपके लिए हूं। 😊"
+    welcome_message = "Hey, I'm your AI therapist. How can I help you today?"
     return jsonify({'response': welcome_message}) 
